@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Lilydale Bdy — QR</title>
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="apple-mobile-web-app-title" content="Lilydale QR" />
+<meta name="theme-color" content="#080c0d" />
+<link rel="manifest" href="qr-manifest.json" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: #080c0d;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    padding: 24px 20px;
+    gap: 0;
+  }
+
+  .brand {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .brand-name {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 5px;
+    color: #ffffff;
+    text-transform: uppercase;
+  }
+
+  .brand-rule {
+    width: 120px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #3fa9bd, transparent);
+    margin: 10px auto 8px;
+  }
+
+  .brand-tagline {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2.5px;
+    color: #3fa9bd;
+    text-transform: uppercase;
+  }
+
+  .qr-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: 0 0 0 1px rgba(63,169,189,0.3), 0 20px 60px rgba(0,0,0,0.7);
+  }
+
+  .qr-card img {
+    display: block;
+    width: min(280px, 78vw);
+    height: min(280px, 78vw);
+  }
+
+  .scan-label {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: #4a6060;
+    text-transform: uppercase;
+    margin-top: 14px;
+  }
+
+  .open-link {
+    display: inline-block;
+    margin-top: 28px;
+    padding: 14px 32px;
+    background: linear-gradient(145deg, #3fa9bd, #216778);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 50px;
+    box-shadow: 0 8px 24px rgba(33,103,120,0.4);
+  }
+
+  .contact-row {
+    display: flex;
+    gap: 20px;
+    margin-top: 24px;
+  }
+
+  .contact-item {
+    text-align: center;
+  }
+
+  .contact-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #4a6060;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .contact-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: #3fa9bd;
+  }
+</style>
+</head>
+<body>
+  <div class="brand">
+    <div class="brand-name">Lilydale Bdy</div>
+    <div class="brand-rule"></div>
+    <div class="brand-tagline">Electrical · Solar · Security</div>
+  </div>
+
+  <div class="qr-card">
+    <img src="data:image/png;base64,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" alt="Lilydale Bdy QR Code" />
+  </div>
+
+  <div class="scan-label">Scan to save contact</div>
+
+  <a class="open-link" href="https://lilydale-bdy.github.io/vigilant-spoon/digital-business-card.html" target="_blank">
+    Open Business Card
+  </a>
+
+  <div class="contact-row">
+    <div class="contact-item">
+      <span class="contact-label">Call</span>
+      <span class="contact-value">078 680 4152</span>
+    </div>
+    <div class="contact-item">
+      <span class="contact-label">WhatsApp</span>
+      <span class="contact-value">078 680 4152</span>
+    </div>
+  </div>
+</body>
+</html>

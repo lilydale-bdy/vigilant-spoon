@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pivot Inspect">
+<link rel="manifest" href="manifest.json">
+<title>Pivot Inspection — Lilydale Bdy</title>
+<style>
+:root{--navy:#216778;--teal:#4A9BAA;--lt:#EAF4F6;--bg:#F0F4F5;--border:#C8D8DB;--grey:#666;--green:#2D9B6A}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:#1a1a1a;min-height:100vh}
+
+/* Header */
+.hdr{background:var(--navy);color:#fff;padding:12px 16px 8px;position:sticky;top:0;z-index:99;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.hdr-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.hdr h1{font-size:15px;font-weight:700;letter-spacing:.2px}
+.step{font-size:11px;opacity:.75}
+.prog-bg{height:4px;background:rgba(255,255,255,.25);border-radius:2px}
+.prog-fill{height:100%;background:#fff;border-radius:2px;transition:width .35s ease}
+
+/* Content */
+.content{padding:14px 14px 96px}
+
+/* Section heading */
+.sec-hdr{background:var(--navy);color:#fff;padding:9px 13px;font-size:13px;font-weight:700;border-radius:8px 8px 0 0;letter-spacing:.4px}
+
+/* Card */
+.card{background:#fff;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px}
+.card-nh{border-radius:0 0 8px 8px;border-top:none;background:#fff;border:1px solid var(--border)}
+
+/* Sub heading */
+.sub{background:var(--lt);color:var(--navy);padding:7px 12px;font-size:12px;font-weight:700;border-bottom:1px solid var(--border);border-top:1px solid var(--border)}
+
+/* Field row */
+.fr{padding:10px 12px;border-bottom:1px solid #f0f0f0}
+.fr:last-child{border-bottom:none}
+.fl{font-size:11px;font-weight:700;color:var(--grey);text-transform:uppercase;letter-spacing:.3px;margin-bottom:5px}
+
+/* Option buttons */
+.opts{display:flex;flex-wrap:wrap;gap:5px}
+.opt{padding:8px 14px;border-radius:20px;border:1.5px solid var(--teal);background:#fff;color:var(--navy);font-size:13px;font-weight:500;cursor:pointer;min-height:36px;transition:background .12s,color .12s}
+.opt.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* Inputs */
+input.tx,textarea.tx,select.tx{width:100%;border:1.5px solid var(--border);border-radius:7px;padding:9px 11px;font-size:14px;font-family:inherit;color:#1a1a1a;background:#fff;appearance:none;-webkit-appearance:none}
+textarea.tx{min-height:65px;resize:vertical}
+input.tx:focus,textarea.tx:focus,select.tx:focus{outline:none;border-color:var(--teal)}
+.sel-wrap{position:relative}.sel-wrap::after{content:'▾';position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--navy);pointer-events:none;font-size:14px}
+
+/* Info grid */
+.igrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px}
+.ig label{display:block;font-size:11px;font-weight:700;color:var(--grey);text-transform:uppercase;margin-bottom:3px}
+
+/* Setup screen */
+.setup-wrap{padding:24px 16px}
+.setup-logo{text-align:center;color:var(--navy);font-size:13px;font-weight:700;letter-spacing:.5px;margin-bottom:24px;opacity:.7}
+.setup-field{margin-bottom:22px}
+.setup-label{font-size:11px;font-weight:700;color:var(--grey);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+.setup-input{width:100%;border:2px solid var(--border);border-radius:10px;padding:14px 14px;font-size:20px;font-weight:700;font-family:inherit;color:var(--navy);background:#fff;text-align:center}
+.setup-input:focus{outline:none;border-color:var(--teal)}
+.stepper{display:flex;align-items:center;gap:0;border:2px solid var(--border);border-radius:10px;overflow:hidden;background:#fff}
+.step-btn{width:64px;min-height:60px;background:#fff;border:none;font-size:28px;font-weight:300;color:var(--navy);cursor:pointer;flex-shrink:0;transition:background .12s}
+.step-btn:active{background:var(--lt)}
+.step-val{flex:1;text-align:center;font-size:36px;font-weight:700;color:var(--navy);line-height:60px;border-left:2px solid var(--border);border-right:2px solid var(--border)}
+.step-sub{display:block;font-size:10px;color:var(--grey);font-weight:400;margin-top:-8px;margin-bottom:4px}
+
+/* IR test */
+.ir{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:10px 12px}
+.ir-c label{display:block;font-size:10px;font-weight:700;color:var(--grey);text-align:center;margin-bottom:3px}
+.ir-c input{width:100%;text-align:center;border:1.5px solid var(--border);border-radius:6px;padding:8px 4px;font-size:14px;font-family:inherit}
+.ir-c input:focus{outline:none;border-color:var(--teal)}
+
+/* Materials */
+.mhdr{display:grid;grid-template-columns:1fr 58px 58px;gap:6px;padding:6px 12px;background:var(--lt);font-size:11px;font-weight:700;color:var(--grey);text-transform:uppercase}
+.mhdr span:not(:first-child){text-align:center}
+.mrow{display:grid;grid-template-columns:1fr 58px 58px;gap:6px;padding:7px 12px;border-bottom:1px solid #f0f0f0;align-items:center}
+.mrow:last-child{border-bottom:none}
+.pin{border:1.5px solid var(--border);border-radius:6px;padding:8px 7px;font-size:13px;font-family:inherit;width:100%}
+.pin:focus{outline:none;border-color:var(--teal)}
+.pin-c{text-align:center}
+
+/* Nav bar */
+.nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:10px 14px;display:flex;gap:10px;z-index:99}
+.btn{flex:1;padding:13px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;border:none;min-height:50px;transition:opacity .1s}
+.btn:active{opacity:.8}
+.btn-p{background:var(--navy);color:#fff}
+.btn-s{background:var(--lt);color:var(--navy);border:1.5px solid var(--teal)}
+.btn-g{background:var(--green);color:#fff}
+
+/* Summary */
+.sum-box{background:var(--lt);border:1px solid var(--border);border-radius:8px;padding:13px;font-size:12px;line-height:1.7;white-space:pre-wrap;word-break:break-word;margin-bottom:12px;max-height:38vh;overflow-y:auto}
+.action-list{display:flex;flex-direction:column;gap:10px;padding:0 12px 14px}
+
+/* GPS row */
+.gps-row{display:flex;gap:8px;align-items:center}
+.gps-row input{flex:1}
+.btn-gps{background:var(--navy);border:none;color:#fff;border-radius:7px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;min-height:40px}
+.btn-gps:active{background:var(--teal)}
+.gps-status{font-size:11px;color:var(--grey);margin-top:4px;font-style:italic}
+
+/* Tag */
+.tag{background:var(--teal);color:#fff;padding:1px 9px;border-radius:9px;font-size:10px;margin-left:6px;vertical-align:middle}
+
+/* Note */
+.note{font-size:11px;color:var(--grey);padding:8px 12px;font-style:italic;border-top:1px solid #f0f0f0}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-row">
+    <h1>🔧 Pivot Inspection</h1>
+    <span class="step" id="step-lbl">Setup</span>
+  </div>
+  <div class="prog-bg"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+</div>
+
+<div class="content" id="content"></div>
+
+<div class="nav">
+  <button class="btn btn-s" id="btn-back" onclick="go(-1)">← Back</button>
+  <button class="btn btn-p" id="btn-next" onclick="go(1)">Next →</button>
+</div>
+
+<script>
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+
+// ── State ──────────────────────────────────────────────────────────────────────
+const D = {};
+const PHOTOS = {}; // { 'cp': [File,...], 't1': [File,...], ... }
+let cur = 0;
+let nT  = 5;
+
+// Screens: 0=Setup, 1=JobInfo, 2=CentrePivot, 3..2+nT=Towers, 3+nT=SignOff, 4+nT=Materials, 5+nT=Summary
+function totalScreens() { return 5 + nT; }
+
+function screenTitle(n) {
+  if (n === 0)                       return 'Setup';
+  if (n === 1)                       return 'Job Information';
+  if (n === 2)                       return 'Centre Pivot';
+  if (n >= 3 && n <= 2 + nT)        return `Tower ${n - 2} of ${nT}`;
+  if (n === 3 + nT)                  return 'Sign-Off';
+  if (n === 4 + nT)                  return 'Materials';
+  return 'Summary & Send';
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function opts(key, vals) {
+  return `<div class="opts" data-k="${key}">${vals.map(v =>
+    `<button class="opt" data-v="${v}" onclick="pick(this)">${v}</button>`
+  ).join('')}</div>`;
+}
+
+function fr(label, inner) {
+  return `<div class="fr"><div class="fl">${label}</div>${inner}</div>`;
+}
+
+function inp(key, placeholder, type='text') {
+  return `<input class="tx" type="${type}" data-bind="${key}" placeholder="${placeholder}">`;
+}
+
+function ta(key, placeholder) {
+  return `<textarea class="tx" data-bind="${key}" placeholder="${placeholder}"></textarea>`;
+}
+
+// ── Photo helpers ──────────────────────────────────────────────────────────────
+function photoSection(key, label) {
+  return `
+<div class="sub">📷 ${label}</div>
+<div class="fr">
+  <label style="display:block;width:100%;padding:13px;background:var(--lt);border:2px dashed var(--teal);border-radius:8px;text-align:center;color:var(--navy);font-weight:600;cursor:pointer;font-size:14px">
+    📷 Take Photo / Choose from Gallery
+    <input type="file" accept="image/*" multiple style="display:none" onchange="addPhotos('${key}',this.files)">
+  </label>
+  <div id="pg-${key}" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"></div>
+</div>`;
+}
+
+function addPhotos(key, files) {
+  if (!PHOTOS[key]) PHOTOS[key] = [];
+  for (const f of files) PHOTOS[key].push(f);
+  renderPhotoGrid(key);
+}
+
+function removePhoto(key, idx) {
+  if (PHOTOS[key]) PHOTOS[key].splice(idx, 1);
+  renderPhotoGrid(key);
+}
+
+function renderPhotoGrid(key) {
+  const c = document.getElementById(`pg-${key}`);
+  if (!c) return;
+  c.innerHTML = (PHOTOS[key] || []).map((f, i) =>
+    `<div style="position:relative">
+      <img src="${URL.createObjectURL(f)}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid var(--border)">
+      <button onclick="removePhoto('${key}',${i})" style="position:absolute;top:-5px;right:-5px;background:#c0392b;color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:13px;cursor:pointer;line-height:22px;padding:0;font-weight:700">×</button>
+    </div>`
+  ).join('');
+}
+
+function refreshAllPhotoGrids() {
+  Object.keys(PHOTOS).forEach(k => renderPhotoGrid(k));
+}
+
+// ── Option picker ──────────────────────────────────────────────────────────────
+function pick(btn) {
+  if (!btn || !btn.classList.contains('opt')) return;
+  const g = btn.parentElement;
+  g.querySelectorAll('.opt').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  D[g.dataset.k] = btn.dataset.v;
+}
+
+// Restore state into current screen
+function restoreState() {
+  document.querySelectorAll('.opts[data-k]').forEach(g => {
+    const v = D[g.dataset.k];
+    if (v) g.querySelectorAll('.opt').forEach(b => {
+      if (b.dataset.v === v) b.classList.add('on');
+    });
+  });
+  document.querySelectorAll('[data-bind]').forEach(el => {
+    const k = el.dataset.bind;
+    if (D[k] !== undefined) el.value = D[k];
+    el.addEventListener('input', () => { D[k] = el.value; });
+  });
+  refreshAllPhotoGrids();
+}
+
+// ── Screen 0: Setup ────────────────────────────────────────────────────────────
+function scrSetup() {
+  return `
+<div class="setup-wrap">
+  <div class="setup-logo">LILYDALE BDY — PIVOT INSPECTION</div>
+
+  <div class="setup-field">
+    <div class="setup-label">Pivot Number / Name</div>
+    <input class="setup-input" type="text" id="setup-pivot" placeholder="e.g. B2, T3, R4" value="${D.pivot||''}">
+  </div>
+
+  <div class="setup-field">
+    <div class="setup-label">Farm</div>
+    <input class="setup-input" type="text" id="setup-farm" placeholder="Farm name" value="${D.farm||''}">
+  </div>
+
+  <div class="setup-field">
+    <div class="setup-label">Number of Towers</div>
+    <div class="stepper">
+      <button class="step-btn" onclick="stepTowers(-1)">−</button>
+      <div class="step-val" id="tower-val">${nT}<span class="step-sub">towers</span></div>
+      <button class="step-btn" onclick="stepTowers(1)">+</button>
+    </div>
+  </div>
+</div>`;
+}
+
+function stepTowers(d) {
+  nT = Math.min(12, Math.max(1, nT + d));
+  const el = document.getElementById('tower-val');
+  if (el) el.innerHTML = `${nT}<span class="step-sub">towers</span>`;
+  D.towers = String(nT);
+}
+
+// ── Screen 1: Job Info ─────────────────────────────────────────────────────────
+function scrJobInfo() {
+  return `
+<div class="card">
+  <div class="sec-hdr">📋 Job Information</div>
+  <div class="igrid">
+    <div class="ig"><label>Date</label>${inp('date','','date')}</div>
+    <div class="ig"><label>Season</label>
+      <div class="sel-wrap"><select class="tx" data-bind="season">
+        <option value="">— Select season —</option>
+        <option value="Summer ${new Date().getFullYear()}">Summer ${new Date().getFullYear()}</option>
+        <option value="Winter ${new Date().getFullYear()}">Winter ${new Date().getFullYear()}</option>
+        <option value="Summer ${new Date().getFullYear()+1}">Summer ${new Date().getFullYear()+1}</option>
+        <option value="Winter ${new Date().getFullYear()+1}">Winter ${new Date().getFullYear()+1}</option>
+      </select></div>
+    </div>
+    <div class="ig"><label>Field / Block</label>${inp('field','e.g. B-Block')}</div>
+  </div>
+  ${fr('GPS Location', `<div class="gps-row">
+    <input class="tx" type="text" id="gps-field" data-bind="gps" placeholder="Tap 📍 to auto-fill or type coords">
+    <button class="btn-gps" id="btn-gps" onclick="autoGPS()">📍 GPS</button>
+  </div>
+  <div id="gps-status" class="gps-status"></div>`)}
+  ${fr('Pivot Make', `<div class="sel-wrap"><select class="tx" data-bind="make">
+    <option value="">— Select make —</option>
+    <option value="Valley">Valley</option>
+    <option value="Zimmatic">Zimmatic (Lindsay)</option>
+    <option value="Agrico">Agrico</option>
+    <option value="Reinke">Reinke</option>
+    <option value="T-L Irrigation">T-L Irrigation</option>
+    <option value="Pierce">Pierce</option>
+    <option value="Senter 360">Senter 360</option>
+    <option value="Bauer">Bauer</option>
+    <option value="Perrot">Perrot</option>
+    <option value="Other">Other</option>
+  </select></div>`)}
+  ${fr('Model / Series', inp('model','e.g. 8000 Series, Classic (optional)'))}
+  ${fr('Weather', opts('weather', ['Clear','Cloudy','Windy','Rain','Hot']))}
+  <div class="note">Pivot: ${D.pivot||'—'}  |  Farm: ${D.farm||'—'}  |  Towers: ${nT}</div>
+</div>`;
+}
+
+// ── Screen 2: Centre Pivot ─────────────────────────────────────────────────────
+function scrCentrePivot() {
+  return `
+<div class="sec-hdr">CENTRE PIVOT</div>
+<div class="card-nh">
+  <div class="sub">General Condition</div>
+  ${fr('Structure / Frame', opts('cp_structure', ['Good','Rusted','Damaged','Monitor']))}
+  ${fr('Main Supply Cable', opts('cp_cable', ['OK','Damaged','UV Cracked']))}
+  ${fr('Main Control Panel', opts('cp_panel', ['Good','Damaged','Water ingress']))}
+  ${fr('Collector Ring / Brushes', opts('cp_collector', ['Good','Dirty','Worn brushes','Damaged','N/A']))}
+  <div class="sub">Supply Voltage (V) — at panel</div>
+  <div class="ir">
+    <div class="ir-c"><label>L1–L2</label><input class="tx" type="number" inputmode="numeric" step="1" data-bind="cp_v12" placeholder="V"></div>
+    <div class="ir-c"><label>L1–L3</label><input class="tx" type="number" inputmode="numeric" step="1" data-bind="cp_v13" placeholder="V"></div>
+    <div class="ir-c"><label>L2–L3</label><input class="tx" type="number" inputmode="numeric" step="1" data-bind="cp_v23" placeholder="V"></div>
+  </div>
+  <div class="sub">Lubrication — Swivel / Ring Gear</div>
+  ${fr('Condition Before', opts('cp_lube_cond', ['Dry','Low','OK']))}
+  ${fr('Action Taken', opts('cp_lube_act', ['Greased','Topped up','N/A']))}
+  ${fr('Grease Type Used', inp('cp_lube_type','e.g. EP2 Lithium'))}
+  <div class="sub">Notes</div>
+  <div class="fr">${ta('cp_notes', 'Any issues or observations...')}</div>
+  ${photoSection('cp', 'Photo Evidence — Centre Pivot')}
+</div>`;
+}
+
+// ── Screen: Tower N ────────────────────────────────────────────────────────────
+function scrTower(n) {
+  const t = `t${n}`;
+  const isLast = (n === nT);
+  return `
+<div class="sec-hdr">TOWER ${n} of ${nT}${isLast ? '<span class="tag">LAST TOWER</span>' : ''}</div>
+<div class="card-nh">
+
+  <div class="sub">Tower Sign-Off</div>
+  ${fr('Overall Condition', opts(`${t}_cond`, ['Good','Fair','Fault','Critical']))}
+
+  <div class="sub">1. Connection Box</div>
+  ${fr('Enclosure', opts(`${t}_cb_enc`, ['Good','Damaged','Water ingress']))}
+  ${fr('Wiring & Terminals', opts(`${t}_cb_wt`, ['OK','Loose','Burnt','Rusted','Broken']))}
+  ${fr('Contactor', opts(`${t}_cb_con`, ['Good','Pitted','Burnt','Replaced']))}
+  ${fr('Limit Switches', opts(`${t}_cb_lim`, ['Pass','Fail','Not tested','N/A']))}
+  <div class="fr"><div class="fl">Notes</div>${ta(`${t}_cb_notes`, 'Connection box notes...')}</div>
+
+  <div class="sub">2. Motor</div>
+  ${fr('Terminal Box', opts(`${t}_mt_tb`, ['OK','Loose','Burnt','Water ingress']))}
+  ${fr('Motor Body / Bolts', opts(`${t}_mt_body`, ['Good','Loose bolts','Rusted','Damaged']))}
+  ${fr('Motor Cable', opts(`${t}_mt_cable`, ['Good','UV Cracked','Damaged','Unsecured']))}
+  <div class="sub">IR Test (MΩ) — Phase to Earth, min 1 MΩ</div>
+  <div class="ir">
+    <div class="ir-c"><label>L1–E</label><input class="tx" type="number" inputmode="decimal" step="0.01" data-bind="${t}_ir_l1e" placeholder="MΩ"></div>
+    <div class="ir-c"><label>L2–E</label><input class="tx" type="number" inputmode="decimal" step="0.01" data-bind="${t}_ir_l2e" placeholder="MΩ"></div>
+    <div class="ir-c"><label>L3–E</label><input class="tx" type="number" inputmode="decimal" step="0.01" data-bind="${t}_ir_l3e" placeholder="MΩ"></div>
+  </div>
+  ${fr('IR Result', opts(`${t}_ir_res`, ['Pass ✅','Fail ❌','Not tested']))}
+  <div class="sub">Continuity Test (Ω) — Phase to Phase</div>
+  <div class="ir">
+    <div class="ir-c"><label>L1–L2</label><input class="tx" type="number" inputmode="decimal" step="0.01" data-bind="${t}_ct_l1l2" placeholder="Ω"></div>
+    <div class="ir-c"><label>L1–L3</label><input class="tx" type="number" inputmode="decimal" step="0.01" data-bind="${t}_ct_l1l3" placeholder="Ω"></div>
+    <div class="ir-c"><label>L2–L3</label><input class="tx" type="number" inputmode="decimal" step="0.01" data-bind="${t}_ct_l2l3" placeholder="Ω"></div>
+  </div>
+  ${fr('Continuity Result', opts(`${t}_ct_res`, ['Pass ✅','Fail ❌','Not tested']))}
+  <div class="fr"><div class="fl">Motor Notes</div>${ta(`${t}_mt_notes`, 'Motor observations, nameplate details...')}</div>
+
+  <div class="sub">3. Gearboxes &amp; Drive Line</div>
+  ${fr('Drive Shafts / Couplers', opts(`${t}_ds`, ['Good','Worn','Loose','Damaged']))}
+  ${fr('Left — Oil', opts(`${t}_gb_l_oil`, ['Good','Dirty','Low','Milky','Changed','N/A']))}
+  ${fr('Left — Seals', opts(`${t}_gb_l_seal`, ['Good','Weeping','Leaking']))}
+  ${fr('Right — Oil', opts(`${t}_gb_r_oil`, ['Good','Dirty','Low','Milky','Changed','N/A']))}
+  ${fr('Right — Seals', opts(`${t}_gb_r_seal`, ['Good','Weeping','Leaking']))}
+  <div class="sub">Lubricants Added — Tower ${n}</div>
+  ${fr('Oil Type Added', inp(`${t}_gb_oil_type`,'e.g. EP460, 85W-140 (blank if none)'))}
+  <div class="fr"><div class="fl">Litres Added (L / R)</div>
+    <div style="display:flex;gap:8px">
+      <input class="pin pin-c" type="number" inputmode="decimal" step="0.1" style="width:80px" data-bind="${t}_gb_oil_l" placeholder="Left ℓ">
+      <input class="pin pin-c" type="number" inputmode="decimal" step="0.1" style="width:80px" data-bind="${t}_gb_oil_r" placeholder="Right ℓ">
+    </div>
+  </div>
+  ${fr('Lubrication Done', opts(`${t}_gb_lube`, ['Both greased','Left only','Right only','N/A']))}
+  <div class="fr"><div class="fl">Gearbox Notes</div>${ta(`${t}_gb_notes`, 'Gearbox notes...')}</div>
+
+  <div class="sub">4. Wheels &amp; Tyres</div>
+  ${fr('Left Wheel / Tyre', opts(`${t}_wh_l`, ['Good','Worn','Cracked','Low pressure','Damaged']))}
+  ${fr('Right Wheel / Tyre', opts(`${t}_wh_r`, ['Good','Worn','Cracked','Low pressure','Damaged']))}
+  ${fr('Wheel Nuts', opts(`${t}_wh_nuts`, ['OK — torqued','Re-torqued','Loose','Missing']))}
+  <div class="fr"><div class="fl">Wheel Notes</div>${ta(`${t}_wh_notes`, 'Tyre pressures, torque values...')}</div>
+
+  ${isLast ? `
+  <div class="sub">5. Signal Light</div>
+  ${fr('Lamp / Bulb', opts(`${t}_sl_lamp`, ['Working','Blown','Missing']))}
+  ${fr('Enclosure', opts(`${t}_sl_enc`, ['Good','Damaged','Water ingress']))}
+  ${fr('Wiring', opts(`${t}_sl_wir`, ['OK','Loose','Damaged']))}
+  <div class="fr"><div class="fl">Signal Light Notes</div>${ta(`${t}_sl_notes`, 'Signal light notes...')}</div>
+  ` : ''}
+
+  ${photoSection(t, `Photo Evidence — Tower ${n}`)}
+
+  <div class="sub">Parts Required — Tower ${n}</div>
+  ${[1,2,3].map(i => `
+  <div class="fr">
+    <div class="fl">Part ${i}</div>
+    <input class="pin" style="margin-bottom:6px" data-bind="${t}_p${i}_desc" placeholder="Description (leave blank if none)">
+    <input class="pin pin-c" type="number" inputmode="numeric" style="width:80px;margin-top:4px" data-bind="${t}_p${i}_qty" placeholder="Qty">
+  </div>`).join('')}
+
+</div>`;
+}
+
+// ── Screen: Sign-Off ───────────────────────────────────────────────────────────
+function scrSignOff() {
+  return `
+<div class="card">
+  <div class="sec-hdr">✅ Overall Pivot Sign-Off</div>
+  ${fr('Overall Condition', opts('so_cond', ['Good','Fair','Fault','Critical']))}
+  ${fr('Next Service Due', inp('so_next', 'e.g. Oct 2026 / Before planting'))}
+  <div class="fr"><div class="fl">Final Notes &amp; Recommendations</div>${ta('so_notes', 'Urgent items, next steps, observations...')}</div>
+</div>`;
+}
+
+// ── Screen: Materials ──────────────────────────────────────────────────────────
+function scrMaterials() {
+  let rows = '';
+  for (let i = 1; i <= 10; i++) {
+    rows += `<div class="mrow">
+      <input class="pin" data-bind="mat${i}_desc" placeholder="Description">
+      <input class="pin pin-c" type="number" inputmode="numeric" data-bind="mat${i}_qty" placeholder="Qty">
+      <input class="pin pin-c" data-bind="mat${i}_unit" placeholder="Unit">
+    </div>`;
+  }
+  return `
+<div class="card">
+  <div class="sec-hdr">🔩 Materials &amp; Parts Used</div>
+  <div class="mhdr"><span>Description</span><span>Qty</span><span>Unit</span></div>
+  ${rows}
+  <div class="note">Fill in every item before leaving site — this builds the invoice.</div>
+</div>`;
+}
+
+// ── Summary generator ──────────────────────────────────────────────────────────
+function genSummary() {
+  const v = k => D[k] || '—';
+  const dt = D.date || new Date().toISOString().slice(0,10);
+  const now = new Date().toLocaleString('en-ZA', {timeZone:'Africa/Johannesburg'});
+  const ref = `LB-PIV-${dt.replace(/-/g,'')}-${(D.pivot||'X').replace(/\s/g,'')}`;
+
+  let s = `PIVOT TOWER INSPECTION REPORT
+Lilydale Bdy  |  ${v('tech')}  |  078 680 4152
+Ref: ${ref}
+${'─'.repeat(44)}
+Pivot: ${v('pivot')}  |  Make: ${[D.make,D.model].filter(Boolean).join(' ')||'—'}  |  Towers: ${nT}
+Farm: ${D.farm||'—'}  |  Field: ${v('field')}  |  Date: ${dt}
+Weather: ${v('weather')}
+${'─'.repeat(44)}
+
+CENTRE PIVOT
+  Structure: ${v('cp_structure')}  |  Cable: ${v('cp_cable')}  |  Panel: ${v('cp_panel')}
+  Collector Ring: ${v('cp_collector')}
+  Supply V: L1-L2:${v('cp_v12')} L1-L3:${v('cp_v13')} L2-L3:${v('cp_v23')}
+  Lubrication: ${v('cp_lube_act')}${D.cp_lube_type ? ` (${D.cp_lube_type})` : ''}
+${D.cp_notes ? `  Notes: ${D.cp_notes}\n` : ''}${(PHOTOS.cp||[]).length > 0 ? `  Photos: ${PHOTOS.cp.length} attached\n` : ''}`;
+
+  for (let n = 1; n <= nT; n++) {
+    const t = `t${n}`;
+    const parts = [1,2,3]
+      .filter(i => D[`${t}_p${i}_desc`])
+      .map(i => `${D[`${t}_p${i}_desc`]} (${D[`${t}_p${i}_qty`]||'?'}) [${D[`${t}_p${i}_pri`]||'—'}]`)
+      .join(', ');
+
+    const makeModel = [D.make, D.model].filter(Boolean).join(' ') || '—';
+  s += `\nTOWER ${n}  —  ${v(`${t}_cond`)}
+  Connection Box: ${v(`${t}_cb_enc`)} | Wiring: ${v(`${t}_cb_wt`)} | Contactor: ${v(`${t}_cb_con`)} | Limits: ${v(`${t}_cb_lim`)}
+  Motor: Body: ${v(`${t}_mt_body`)} | Cable: ${v(`${t}_mt_cable`)} | Terminal: ${v(`${t}_mt_tb`)}
+  IR Test (P-E): L1:${v(`${t}_ir_l1e`)} L2:${v(`${t}_ir_l2e`)} L3:${v(`${t}_ir_l3e`)} MΩ  →  ${v(`${t}_ir_res`)}
+  Continuity (Ω P-P): L1-L2:${v(`${t}_ct_l1l2`)} L1-L3:${v(`${t}_ct_l1l3`)} L2-L3:${v(`${t}_ct_l2l3`)}  →  ${v(`${t}_ct_res`)}
+  Drive Shafts/Couplers: ${v(`${t}_ds`)}
+  Gearboxes: Left Oil:${v(`${t}_gb_l_oil`)} Seal:${v(`${t}_gb_l_seal`)} | Right Oil:${v(`${t}_gb_r_oil`)} Seal:${v(`${t}_gb_r_seal`)}${D[`${t}_gb_oil_type`] ? `
+  Oil Added: ${D[`${t}_gb_oil_type`]} — L:${D[`${t}_gb_oil_l`]||'0'}ℓ R:${D[`${t}_gb_oil_r`]||'0'}ℓ` : ''}
+  Lubrication: ${v(`${t}_gb_lube`)}${D[`${t}_gb_grease_type`] ? ` (${D[`${t}_gb_grease_type`]})` : ''}
+  Wheels: L:${v(`${t}_wh_l`)} | R:${v(`${t}_wh_r`)} | Nuts: ${v(`${t}_wh_nuts`)}`;
+
+    if (n === nT) s += `\n  Signal Light: ${v(`${t}_sl_lamp`)} | Enclosure: ${v(`${t}_sl_enc`)}`;
+    if (parts)    s += `\n  ⚠ Parts: ${parts}`;
+    if (D[`${t}_cb_notes`]) s += `\n  CB: ${D[`${t}_cb_notes`]}`;
+    if (D[`${t}_mt_notes`]) s += `\n  Motor: ${D[`${t}_mt_notes`]}`;
+    if (D[`${t}_gb_notes`]) s += `\n  GB: ${D[`${t}_gb_notes`]}`;
+    if (D[`${t}_wh_notes`]) s += `\n  Wheels: ${D[`${t}_wh_notes`]}`;
+    if ((PHOTOS[t]||[]).length > 0) s += `\n  Photos: ${PHOTOS[t].length} attached`;
+    s += '\n';
+  }
+
+  s += `\n${'─'.repeat(44)}
+SIGN-OFF:  ${v('so_cond')}  |  Next service: ${v('so_next')}
+${D.so_notes ? D.so_notes + '\n' : ''}
+MATERIALS USED:\n`;
+
+  let matCount = 0;
+  for (let i = 1; i <= 10; i++) {
+    if (D[`mat${i}_desc`]) {
+      s += `  ${i}. ${D[`mat${i}_desc`]} — ${D[`mat${i}_qty`]||'?'} ${D[`mat${i}_unit`]||''}\n`;
+      matCount++;
+    }
+  }
+  if (!matCount) s += '  None recorded\n';
+
+  s += `\n──\nGenerated: ${now}\nLilydale Bdy  |  Stephan  |  078 680 4152  |  Stephan@lewettin.co.za`;
+  return s;
+}
+
+// ── Screen: Summary ────────────────────────────────────────────────────────────
+function scrSummary() {
+  const sum = genSummary();
+  window._summary = sum;
+  const subj = encodeURIComponent(`Pivot ${D.pivot||''} Inspection — ${D.date||''}`);
+  const body = encodeURIComponent(sum.substring(0, 1800));
+  return `
+<div class="card">
+  <div class="sec-hdr">📤 Summary &amp; Send</div>
+  <div style="padding:12px">
+    <div class="sum-box">${sum.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>
+    <div class="action-list">
+      <a href="mailto:Stephan@lewettin.co.za?subject=${subj}&body=${body}" style="display:block;text-decoration:none">
+        <button class="btn btn-g" style="width:100%">📧 Send via Email</button>
+      </a>
+      <button class="btn btn-p" style="width:100%" onclick="copySum()">📋 Copy Full Report (for Telegram / paste)</button>
+      <button class="btn btn-s" style="width:100%" onclick="saveLocal()">💾 Save report file (goes to Downloads)</button>
+    </div>
+    ${Object.values(PHOTOS).flat().length > 0 ? `<div class="note" style="margin-top:8px">📷 ${Object.values(PHOTOS).flat().length} photo(s) captured — included when you tap Share/Email above.</div>` : ''}
+  </div>
+</div>`;
+}
+
+function copySum() {
+  const text = window._summary || '';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text)
+      .then(() => alert('✅ Copied! Paste into Telegram or email.'))
+      .catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  alert('✅ Copied! Paste into Telegram or email.');
+}
+
+function saveLocal() {
+  const name = `pivot_${D.pivot||'X'}_${D.date||new Date().toISOString().slice(0,10)}.txt`;
+  const text = genSummary();
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  try {
+    localStorage.setItem(name, JSON.stringify({ data: D, nT, saved: new Date().toISOString() }));
+  } catch (e) {}
+  alert(`✅ Report saved to your Downloads as:\n${name}`);
+}
+
+function shareReport() {
+  const text = genSummary();
+  const title = `Pivot ${D.pivot||''} Inspection — ${D.date||''}`;
+  const allFiles = Object.values(PHOTOS).flat();
+  if (navigator.share) {
+    const data = { title, text };
+    if (allFiles.length > 0 && navigator.canShare && navigator.canShare({ files: allFiles })) {
+      data.files = allFiles;
+    }
+    navigator.share(data).catch(() => copySum());
+  } else {
+    copySum();
+  }
+}
+
+// ── Render engine ──────────────────────────────────────────────────────────────
+function render() {
+  let html = '';
+  if      (cur === 0)                     html = scrSetup();
+  else if (cur === 1)                     html = scrJobInfo();
+  else if (cur === 2)                     html = scrCentrePivot();
+  else if (cur >= 3 && cur <= 2 + nT)    html = scrTower(cur - 2);
+  else if (cur === 3 + nT)               html = scrSignOff();
+  else if (cur === 4 + nT)               html = scrMaterials();
+  else                                    html = scrSummary();
+
+  document.getElementById('content').innerHTML = html;
+  restoreState();
+
+  const total = totalScreens() + 1;
+  const pct   = Math.round((cur / (total - 1)) * 100);
+  document.getElementById('prog').style.width = pct + '%';
+  document.getElementById('step-lbl').textContent = `${screenTitle(cur)} — ${cur + 1}/${total}`;
+
+  const backBtn = document.getElementById('btn-back');
+  const nextBtn = document.getElementById('btn-next');
+  backBtn.style.display = cur === 0 ? 'none' : '';
+
+  if (cur === 0) {
+    nextBtn.textContent = 'Begin Inspection →';
+    nextBtn.className   = 'btn btn-g';
+  } else if (cur === totalScreens()) {
+    nextBtn.textContent = 'Done ✓';
+    nextBtn.className   = 'btn btn-g';
+  } else {
+    nextBtn.textContent = 'Next →';
+    nextBtn.className   = 'btn btn-p';
+  }
+
+  window.scrollTo(0, 0);
+}
+
+function go(dir) {
+  if (dir === 1 && cur === 0) {
+    // Lock in pivot, farm and tower count from setup screen
+    const pivotEl = document.getElementById('setup-pivot');
+    const farmEl  = document.getElementById('setup-farm');
+    if (pivotEl) D.pivot = pivotEl.value.trim() || D.pivot || 'X';
+    if (farmEl)  D.farm  = farmEl.value.trim()  || D.farm  || '';
+    D.towers = String(nT);
+    if (!D.pivot || D.pivot === 'X') {
+      alert('Please enter the Pivot number before continuing.');
+      return;
+    }
+  }
+  if (dir === 1 && cur === totalScreens()) {
+    shareReport();
+    return;
+  }
+  cur = Math.max(0, Math.min(cur + dir, totalScreens()));
+  render();
+}
+
+// ── GPS ────────────────────────────────────────────────────────────────────────
+function autoGPS() {
+  const btn = document.getElementById('btn-gps');
+  const status = document.getElementById('gps-status');
+  const field = document.getElementById('gps-field');
+  if (!navigator.geolocation) { if(status) status.textContent = 'GPS not supported on this device.'; return; }
+  if(btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  if(status) status.textContent = 'Getting location...';
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      const val = lat + ', ' + lng;
+      if(field) field.value = val;
+      D.gps = val;
+      if(btn) { btn.textContent = '📍 GPS'; btn.disabled = false; }
+      if(status) status.textContent = '✅ Location captured (' + pos.coords.accuracy.toFixed(0) + 'm accuracy)';
+    },
+    function() {
+      if(btn) { btn.textContent = '📍 GPS'; btn.disabled = false; }
+      if(status) status.textContent = '⚠️ Could not get location — enter manually.';
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────────
+D.farm   = '';
+D.tech   = 'Stephan';
+D.towers = '5';
+D.date   = new Date().toISOString().slice(0, 10);
+render();
+</script>
+</body>
+</html>

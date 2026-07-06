@@ -1,0 +1,22 @@
+{
+  "name": "Lilydale Bdy QR",
+  "short_name": "LilydaleBdy",
+  "description": "Lilydale Bdy contact QR code",
+  "start_url": "./qr-wallet.html",
+  "display": "standalone",
+  "background_color": "#080c0d",
+  "theme_color": "#080c0d",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://lilydale-bdy.github.io/vigilant-spoon/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://lilydale-bdy.github.io/vigilant-spoon/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

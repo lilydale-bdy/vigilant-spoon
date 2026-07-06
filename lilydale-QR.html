@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lilydale Bdy — QR Code</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #080c0d 0%, #0e1719 100%);
+    color: #eef2f1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .container {
+    text-align: center;
+    background: rgba(17, 23, 31, 0.8);
+    border: 1px solid rgba(63, 169, 189, 0.3);
+    border-radius: 24px;
+    padding: 40px 30px;
+    max-width: 480px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  }
+  h1 {
+    font-size: 24px;
+    margin-bottom: 12px;
+    background: linear-gradient(180deg, #ffffff, #c9c2af);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .tagline {
+    font-size: 14px;
+    color: #93a3a3;
+    margin-bottom: 32px;
+  }
+  .qr-box {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 16px;
+    display: inline-block;
+    margin-bottom: 32px;
+    box-shadow: 0 10px 30px rgba(63, 169, 189, 0.25);
+  }
+  .qr-box img {
+    display: block;
+    width: 280px;
+    height: 280px;
+  }
+  .instructions {
+    font-size: 13px;
+    color: #93a3a3;
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+  .buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .btn {
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all .2s ease;
+  }
+  .btn.primary {
+    background: linear-gradient(145deg, #3fa9bd, #216778);
+    color: #ffffff;
+  }
+  .btn.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(63, 169, 189, 0.35); }
+  .btn.secondary {
+    background: rgba(255,255,255,0.1);
+    color: #f1e9d6;
+    border: 1px solid rgba(63, 169, 189, 0.4);
+  }
+  .btn.secondary:hover { background: rgba(255,255,255,0.15); }
+  .url {
+    font-size: 12px;
+    color: #93a3a3;
+    word-break: break-all;
+    background: rgba(0,0,0,0.3);
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 24px;
+    border-left: 3px solid #3fa9bd;
+  }
+  @media print {
+    body { background: white; padding: 0; }
+    .container { background: white; border: none; box-shadow: none; padding: 20px; }
+    .buttons { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Lilydale Bdy</h1>
+    <p class="tagline">Scan to view digital business card</p>
+
+    <div class="qr-box">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https://lilydale-bdy.github.io/vigilant-spoon/digital-business-card.html" alt="QR Code for Lilydale Bdy Business Card" />
+    </div>
+
+    <div class="instructions">
+      Point your phone camera at the QR code to open the digital business card. <strong>Tap "Save Contact"</strong> to add to your phone.
+    </div>
+
+    <div class="buttons">
+      <a href="#" class="btn primary" onclick="window.print(); return false;">
+        🖨️ Print QR Code
+      </a>
+      <a href="digital-business-card.html" class="btn secondary">
+        View Card
+      </a>
+    </div>
+
+    <div class="url">
+      <strong>Card URL:</strong><br/>
+      https://lilydale-bdy.github.io/vigilant-spoon/digital-business-card.html
+    </div>
+  </div>
+</body>
+</html>

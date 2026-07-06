@@ -1,0 +1,13 @@
+BEGIN:VCARD
+VERSION:3.0
+N:;Stephan de Wet;;;
+FN:Stephan — Lilydale Bdy
+ORG:Lilydale Bdy
+TITLE:
+TEL;TYPE=CELL,VOICE:+27786804152
+item1.TEL:+27786804152
+item1.X-ABLabel:WhatsApp
+EMAIL;TYPE=INTERNET,WORK:Stephan@lewettin.co.za
+ADR;TYPE=WORK:;;Langford;Hopetown;Northern Cape;8750;South Africa
+NOTE:Electrical, Solar, Security (Betafence accredited), Automation, Mechanical & IT services across the Northern Cape.
+END:VCARD
