@@ -60,6 +60,22 @@
     .btn-pdf:active { background: #0f5a3a; }
     .btn-lily { width: 100%; background: #2e5baa; color: #fff; border: none; border-radius: 10px; padding: 16px; font-size: 1rem; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; transition: background 0.2s; margin-top: 10px; }
     .btn-lily:active { background: #1a3a7a; }
+    /* Two PDF buttons side by side */
+    .pdf-row { display: flex; gap: 10px; }
+    .pdf-row .btn-pdf { flex: 1; padding: 16px 8px; font-size: 0.95rem; }
+    .btn-pdf-internal { background: #8a5a1a; }
+    .btn-pdf-internal:active { background: #6a4210; }
+    /* Internal (evidence) section — clearly marked, never reaches the client */
+    .section-internal { border-color: #6a3a20; background: #241a14; }
+    .section-internal .section-title { color: #e0946a; }
+    .internal-warn { font-size: 0.7rem; color: #c88a6a; margin-bottom: 10px; line-height: 1.4; }
+    /* Draft-restored banner */
+    .draft-banner { display: none; align-items: center; gap: 10px; flex-wrap: wrap; background: #1a3a2a; border: 1px solid #2e7a5a; color: #b8e0cc; border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.85rem; }
+    .draft-banner.show { display: flex; }
+    .draft-banner .db-msg { flex: 1; min-width: 140px; }
+    .draft-banner button { background: transparent; border: 1px solid #2e7a5a; color: #7ad0a0; border-radius: 6px; padding: 6px 12px; font-size: 0.8rem; cursor: pointer; }
+    .draft-banner button:active { background: #2e5a44; }
+    .draft-banner .db-x { border-color: #2e5a44; color: #6a9a80; padding: 6px 10px; }
     .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #2e5baa; color: #fff; padding: 12px 24px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; z-index: 999; display: none; text-align: center; max-width: 90vw; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
   </style>
 </head>
@@ -74,6 +90,12 @@
 </header>
 
 <div class="container">
+
+  <div class="draft-banner" id="draft-banner">
+    <span class="db-msg">📝 Draft restored from your last session.</span>
+    <button onclick="discardDraft()">Discard draft</button>
+    <button class="db-x" onclick="hideDraftBanner()" aria-label="Dismiss">✕</button>
+  </div>
 
   <div class="section">
     <div class="section-title">Client &amp; Site</div>
@@ -136,6 +158,12 @@
     <textarea id="notes" placeholder="Follow-up required, parts on order, client instructions..." style="min-height:70px"></textarea>
   </div>
 
+  <div class="section section-internal">
+    <div class="section-title">🔒 Internal Notes (Evidence)</div>
+    <div class="internal-warn">Internal only — appears on the Internal PDF and in Send-to-Lily, but NEVER on the Client PDF. Use for dispute/liability evidence (damage caused by misuse, warranty exclusions, site conditions).</div>
+    <textarea id="internal-notes" placeholder="Evidence / internal observations — not shown to the client..." style="min-height:80px"></textarea>
+  </div>
+
   <div class="section">
     <div class="section-title">Site Photos</div>
     <input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="addPhotos(this.files)">
@@ -153,7 +181,10 @@
     <button class="btn-clear" onclick="clearSig('sig-client')">Clear</button>
   </div>
 
-  <button class="btn-pdf" onclick="generatePDF()">Generate Job Card PDF</button>
+  <div class="pdf-row">
+    <button class="btn-pdf" onclick="generatePDF(false)">📄 Client PDF</button>
+    <button class="btn-pdf btn-pdf-internal" onclick="generatePDF(true)">🔒 Internal PDF</button>
+  </div>
   <button class="btn-lily" onclick="sendToLily()">📨 Send to Lily</button>
 
 </div>
@@ -165,12 +196,136 @@
   var matCount = 0;
   var hoursVal = 0;
 
-  function adjHours(delta) {
-    hoursVal = Math.max(0, Math.min(24, hoursVal + 0.5 * delta));
+  // One short ref per card: JC-YYMMDD-XX. Generated once when the form first
+  // becomes non-empty; both PDF buttons AND Send-to-Lily reuse it. Reset to
+  // null after a successful Send so the next card gets a fresh ref.
+  var JOB_REF = null;
+  var DRAFT_KEY = 'lb-jobcard-draft';
+  var saveTimer = null;
+
+  function val(id) { var el = document.getElementById(id); return el ? el.value : ''; }
+
+  function genRef() {
+    var d = new Date();
+    var yy = String(d.getFullYear()).slice(-2);
+    var ymd = yy + pad2(d.getMonth() + 1) + pad2(d.getDate());
+    var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    var xx = chars[Math.floor(Math.random() * 36)] + chars[Math.floor(Math.random() * 36)];
+    return 'JC-' + ymd + '-' + xx;
+  }
+  function ensureJobRef() { if (!JOB_REF) JOB_REF = genRef(); return JOB_REF; }
+  function maybeInitRef() { if (!JOB_REF && !isFormEmpty()) JOB_REF = genRef(); }
+
+  function isFormEmpty() {
+    var ids = ['client-name', 'contact-person', 'site-address', 'gps-coords', 'work-performed', 'notes', 'internal-notes'];
+    for (var i = 0; i < ids.length; i++) { if (val(ids[i]).trim()) return false; }
+    if (val('job-type')) return false;
+    if (hoursVal > 0) return false;
+    if (getMaterials().length) return false;
+    return true;
+  }
+
+  function renderHours() {
     var h = Math.floor(hoursVal);
     var half = hoursVal % 1 !== 0;
     var display = hoursVal === 0 ? '0 hrs' : (h > 0 && half ? h + 'h 30m' : h > 0 ? h + ' hrs' : '30m');
     document.getElementById('hours-display').textContent = display;
+  }
+  function adjHours(delta) {
+    hoursVal = Math.max(0, Math.min(24, hoursVal + 0.5 * delta));
+    renderHours();
+    scheduleSave();
+  }
+
+  // --- Draft autosave (localStorage; photos excluded — too big) -------------
+  function getMaterialsRaw() {
+    var rows = document.querySelectorAll('.material-row');
+    var out = [];
+    rows.forEach(function(row) {
+      out.push({
+        item: row.querySelector('.mat-item').value,
+        qty: row.querySelector('.mat-qty').value,
+        unit: row.querySelector('.mat-unit').value
+      });
+    });
+    return out;
+  }
+
+  function collectState() {
+    return {
+      ref: JOB_REF,
+      client: val('client-name'), contact: val('contact-person'),
+      site: val('site-address'), gps: val('gps-coords'),
+      date: val('job-date'), jobType: val('job-type'),
+      tech: val('technician'), hours: hoursVal,
+      work: val('work-performed'), notes: val('notes'),
+      internal: val('internal-notes'),
+      materials: getMaterialsRaw()
+    };
+  }
+
+  function saveDraft() {
+    if (isFormEmpty()) { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} return; }
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(collectState())); } catch (e) {}
+  }
+
+  function scheduleSave() {
+    maybeInitRef();
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveDraft, 500);
+  }
+
+  function restoreDraft() {
+    var raw;
+    try { raw = localStorage.getItem(DRAFT_KEY); } catch (e) { return; }
+    if (!raw) return;
+    var s;
+    try { s = JSON.parse(raw); } catch (e) { return; }
+    JOB_REF = s.ref || null;
+    if (s.client) document.getElementById('client-name').value = s.client;
+    if (s.contact) document.getElementById('contact-person').value = s.contact;
+    if (s.site) document.getElementById('site-address').value = s.site;
+    if (s.gps) document.getElementById('gps-coords').value = s.gps;
+    if (s.date) document.getElementById('job-date').value = s.date;
+    if (s.jobType) document.getElementById('job-type').value = s.jobType;
+    if (s.tech) document.getElementById('technician').value = s.tech;
+    if (s.work) document.getElementById('work-performed').value = s.work;
+    if (s.notes) document.getElementById('notes').value = s.notes;
+    if (s.internal) document.getElementById('internal-notes').value = s.internal;
+    hoursVal = parseFloat(s.hours) || 0;
+    renderHours();
+    if (s.materials && s.materials.length) {
+      s.materials.forEach(function(m) { addMaterial(m.item, m.qty, m.unit); });
+    }
+    if (!isFormEmpty()) showDraftBanner();
+  }
+
+  function resetFormFields() {
+    ['client-name', 'contact-person', 'site-address', 'gps-coords', 'work-performed', 'notes', 'internal-notes'].forEach(function(id) {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('technician').value = 'Stephan';
+    document.getElementById('job-type').value = '';
+    document.getElementById('job-date').valueAsDate = new Date();
+    document.getElementById('materials-list').innerHTML = '';
+    document.getElementById('gps-status').textContent = '';
+    hoursVal = 0;
+    renderHours();
+    JOB_REF = null;
+  }
+
+  function clearDraftAfterSend() {
+    try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+    JOB_REF = null; // next card = new ref
+  }
+
+  function showDraftBanner() { document.getElementById('draft-banner').classList.add('show'); }
+  function hideDraftBanner() { document.getElementById('draft-banner').classList.remove('show'); }
+  function discardDraft() {
+    try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+    resetFormFields();
+    hideDraftBanner();
+    showToast('🗑️ Draft discarded — fresh card.');
   }
 
   function formatHoursVal(n) {
@@ -204,6 +359,7 @@
         status.textContent = 'GPS captured (+/-' + Math.round(pos.coords.accuracy) + 'm)';
         btn.textContent = 'GPS';
         btn.disabled = false;
+        scheduleSave();
       },
       function() {
         status.textContent = 'Could not get GPS — type coordinates manually';
@@ -271,8 +427,8 @@
     var div = document.createElement('div');
     div.className = 'material-row';
     div.id = 'mat-' + id;
-    var iv = item || '';
-    var qv = qty || '';
+    var iv = esc(item || '');
+    var qv = esc(qty || '');
     var uv = unit || 'ea';
     div.innerHTML = '<input type="text" placeholder="Item description" value="' + iv + '" class="mat-item">'
       + '<input type="number" placeholder="0" value="' + qv + '" min="0" step="0.1" class="mat-qty">'
@@ -287,11 +443,13 @@
       + '</select>'
       + '<button class="btn-remove" onclick="removeMaterial(' + id + ')">x</button>';
     document.getElementById('materials-list').appendChild(div);
+    scheduleSave();
   }
 
   function removeMaterial(id) {
     var el = document.getElementById('mat-' + id);
     if (el) el.remove();
+    scheduleSave();
   }
 
   function getMaterials() {
@@ -388,6 +546,13 @@
   window.addEventListener('load', function() {
     initSig('sig-tech');
     initSig('sig-client');
+    // Autosave: any typing / select change in the form debounces a draft save
+    // (and lazily mints the JC- ref once the form is non-empty).
+    var container = document.querySelector('.container');
+    container.addEventListener('input', scheduleSave);
+    container.addEventListener('change', scheduleSave);
+    // Restore a draft from a killed tab / crashed browser in the field.
+    restoreDraft();
   });
 
   // Helpers
@@ -414,30 +579,26 @@
     return new File([u8], 'photo-' + (index + 1) + '.jpg', { type: mime });
   }
 
-  // Send to Lily — formats job card as structured message + shares photos via native share sheet
-  function sendToLily() {
-    if (PHOTOS_PENDING > 0) { showToast('⏳ Photos still processing — tap Send again in a second.'); return; }
-    var client  = document.getElementById('client-name').value.trim() || '—';
-    var contact = document.getElementById('contact-person').value.trim();
-    var site    = document.getElementById('site-address').value.trim() || '—';
-    var gps     = document.getElementById('gps-coords').value.trim();
-    var date    = document.getElementById('job-date').value || new Date().toISOString().split('T')[0];
-    var jobType = document.getElementById('job-type').value || '—';
-    var tech    = document.getElementById('technician').value.trim() || 'Stephan';
-    var work    = document.getElementById('work-performed').value.trim() || '—';
-    var notes   = document.getElementById('notes').value.trim();
-    var mats    = getMaterials();
-
-    var d = new Date();
-    var ds = d.getFullYear().toString() + pad2(d.getMonth() + 1) + pad2(d.getDate());
-    var ts = pad2(d.getHours()) + pad2(d.getMinutes());
-    var jobNo = 'LB-JC-' + ds + '-' + ts;
-
-    var photoFiles = PHOTOS_B64.filter(Boolean).map(b64ToFile);
-    var photoCount = photoFiles.length;
+  // Build the structured Send-to-Lily message. Lily's auto-parser depends on the
+  // Ref:/Date:/Client:/Site:/Job Type:/Technician:/Hours on Site: lines — keep them.
+  // The INTERNAL NOTES: block goes AFTER NOTES: (the vault is the evidence archive).
+  function buildLilyMessage() {
+    ensureJobRef();
+    var client   = document.getElementById('client-name').value.trim() || '—';
+    var contact  = document.getElementById('contact-person').value.trim();
+    var site     = document.getElementById('site-address').value.trim() || '—';
+    var gps      = document.getElementById('gps-coords').value.trim();
+    var date     = document.getElementById('job-date').value || new Date().toISOString().split('T')[0];
+    var jobType  = document.getElementById('job-type').value || '—';
+    var tech     = document.getElementById('technician').value.trim() || 'Stephan';
+    var work     = document.getElementById('work-performed').value.trim() || '—';
+    var notes    = document.getElementById('notes').value.trim();
+    var internal = document.getElementById('internal-notes').value.trim();
+    var mats     = getMaterials();
+    var photoCount = PHOTOS_B64.filter(Boolean).length;
 
     var msg = '📋 JOB CARD\n';
-    msg += 'Ref: ' + jobNo + '\n';
+    msg += 'Ref: ' + JOB_REF + '\n';
     msg += 'Date: ' + date + '\n';
     msg += 'Client: ' + client + '\n';
     if (contact) msg += 'Contact: ' + contact + '\n';
@@ -453,6 +614,15 @@
       mats.forEach(function(m) { msg += '• ' + m.item + ' × ' + m.qty + ' ' + m.unit + '\n'; });
     }
     if (notes) msg += '\nNOTES:\n' + notes;
+    if (internal) msg += '\nINTERNAL NOTES:\n' + internal;
+    return msg;
+  }
+
+  // Send to Lily — formats job card as structured message + shares photos via native share sheet
+  function sendToLily() {
+    if (PHOTOS_PENDING > 0) { showToast('⏳ Photos still processing — tap Send again in a second.'); return; }
+    var msg = buildLilyMessage();
+    var photoFiles = PHOTOS_B64.filter(Boolean).map(b64ToFile);
 
     if (navigator.share) {
       // Try to share with photos attached; fall back to text only if files not supported
@@ -462,28 +632,40 @@
         if (!shareWithFiles && photoFiles.length > 0) {
           showToast('⚠️ Photos not supported in share — send them separately in Telegram.');
         }
+        clearDraftAfterSend();
       }).catch(function() {});
     } else {
       navigator.clipboard.writeText(msg).then(function() {
         showToast('✅ Copied! Paste into your Lily chat on Telegram.');
+        clearDraftAfterSend();
       }).catch(function() {
         showToast('⚠️ Could not copy — open Telegram and paste manually.');
       });
     }
   }
 
-  // PDF generation
-  function generatePDF() {
+  // PDF generation — includeInternal=true is the Internal PDF (everything, incl.
+  // the evidence field); includeInternal=false is the Client PDF, which must NEVER
+  // contain any internal-notes/evidence text.
+  function generatePDF(includeInternal) {
     if (PHOTOS_PENDING > 0) { showToast('⏳ Photos still processing — tap PDF again in a second.'); return; }
+    ensureJobRef();
     var w = window.open('', '_blank');
     if (!w) {
       alert('Pop-ups are blocked. In Safari: tap AA in the address bar -> Website Settings -> Allow Pop-ups.');
       return;
     }
-    buildPDF(PHOTOS_B64, w);
+    buildPDF(PHOTOS_B64, w, includeInternal);
   }
 
-  function buildPDF(b64, w) {
+  function buildPDF(b64, w, includeInternal) {
+    var html = buildPDFHtml(b64, includeInternal);
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  }
+
+  function buildPDFHtml(b64, includeInternal) {
     var client  = document.getElementById('client-name').value.trim() || '—';
     var contact = document.getElementById('contact-person').value.trim() || '—';
     var site    = document.getElementById('site-address').value.trim() || '—';
@@ -494,13 +676,12 @@
     var hours   = hoursVal;
     var work    = document.getElementById('work-performed').value.trim() || '—';
     var notes   = document.getElementById('notes').value.trim();
+    var internal = document.getElementById('internal-notes').value.trim();
     var mats    = getMaterials();
     var sigTech   = getSig('sig-tech');
     var sigClient = getSig('sig-client');
 
-    var d = new Date();
-    var ds = d.getFullYear().toString() + pad2(d.getMonth() + 1) + pad2(d.getDate());
-    var jobNo = 'LB-JC-' + ds + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+    var jobNo = ensureJobRef();
 
     var html = '';
     html += '<!DOCTYPE html><html><head><meta charset="UTF-8">';
@@ -532,7 +713,9 @@
     html += '.sig-img{width:100%;height:80px;object-fit:contain;object-position:left center;border-bottom:1px solid #aaa;}';
     html += '.sig-blank{height:80px;border-bottom:1px solid #aaa;}';
     html += '.sig-name{font-size:10px;color:#555;margin-top:4px;}';
-    html += '@media print{body{padding:10px;}.hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact;}.st{-webkit-print-color-adjust:exact;print-color-adjust:exact;}.sec{page-break-inside:avoid;}}';
+    html += '.sec-internal{border:2px solid #b03a20;}';
+    html += '.st-internal{background:#fbe6e0;color:#b03a20;}';
+    html += '@media print{body{padding:10px;}.hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact;}.st{-webkit-print-color-adjust:exact;print-color-adjust:exact;}.st-internal{-webkit-print-color-adjust:exact;print-color-adjust:exact;}.sec{page-break-inside:avoid;}}';
     html += '</style></head><body>';
 
     html += '<div class="hdr">';
@@ -584,6 +767,15 @@
       html += '</div>';
     }
 
+    // Internal evidence — ONLY on the Internal PDF. The Client PDF passes
+    // includeInternal=false so this text can never reach the client.
+    if (includeInternal && internal) {
+      html += '<div class="sec sec-internal">';
+      html += '<div class="st st-internal">Internal Notes — Evidence (NOT FOR CLIENT)</div>';
+      html += '<div class="full">' + esc(internal).replace(/\n/g, '<br>') + '</div>';
+      html += '</div>';
+    }
+
     var photoCount = 0;
     for (var j = 0; j < b64.length; j++) { if (b64[j]) photoCount++; }
     if (photoCount > 0) {
@@ -623,9 +815,7 @@
     html += '<scr' + 'ipt>window.onload=function(){window.print();};<\/scr' + 'ipt>';
     html += '</body></html>';
 
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
+    return html;
   }
 
   if ('serviceWorker' in navigator) {

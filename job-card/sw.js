@@ -2,7 +2,7 @@
 // serve cache-first and only evict old caches when this name changes
 // (bug-sweep 2026-07-12: v1 was never bumped, so deployed phones could never
 // receive fixes).
-const CACHE = 'lb-jobcard-v2';
+const CACHE = 'lb-jobcard-v3';
 const ASSETS = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
