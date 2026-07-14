@@ -223,15 +223,23 @@
     });
   }
 
+  var PHOTOS_PENDING = 0; /* bug-sweep fix 2026-07-12: photos still converting must block Send/PDF */
   function addPhotos(files) {
     for (var i = 0; i < files.length; i++) {
       var f = files[i];
-      var idx = PHOTOS.length;
       PHOTOS.push(f);
       PHOTOS_B64.push('');
-      (function(index, file) {
-        fileToBase64(file).then(function(dataUrl) { PHOTOS_B64[index] = dataUrl; });
-      })(idx, f);
+      (function(file) {
+        PHOTOS_PENDING++;
+        fileToBase64(file).then(function(dataUrl) {
+          /* look the file up by identity, not captured index - removePhoto()
+             splices the arrays, so a stale index would land the data on the
+             wrong photo */
+          var at = PHOTOS.indexOf(file);
+          if (at >= 0) PHOTOS_B64[at] = dataUrl;
+          PHOTOS_PENDING--;
+        });
+      })(f);
     }
     renderPhotoGrid();
     document.getElementById('photo-input').value = '';
@@ -408,6 +416,7 @@
 
   // Send to Lily — formats job card as structured message + shares photos via native share sheet
   function sendToLily() {
+    if (PHOTOS_PENDING > 0) { showToast('⏳ Photos still processing — tap Send again in a second.'); return; }
     var client  = document.getElementById('client-name').value.trim() || '—';
     var contact = document.getElementById('contact-person').value.trim();
     var site    = document.getElementById('site-address').value.trim() || '—';
@@ -436,7 +445,7 @@
     if (gps) msg += 'GPS: ' + gps + '\n';
     msg += 'Job Type: ' + jobType + '\n';
     msg += 'Technician: ' + tech + '\n';
-    msg += 'Hours on Site: ' + formatHoursVal(hoursVal) + '\n';
+    msg += 'Hours on Site: ' + (formatHoursVal(hoursVal) || '0 hrs') + '\n';
     if (photoCount > 0) msg += 'Photos: ' + photoCount + ' attached\n';
     msg += '\nWORK PERFORMED:\n' + work + '\n';
     if (mats.length > 0) {
@@ -465,6 +474,7 @@
 
   // PDF generation
   function generatePDF() {
+    if (PHOTOS_PENDING > 0) { showToast('⏳ Photos still processing — tap PDF again in a second.'); return; }
     var w = window.open('', '_blank');
     if (!w) {
       alert('Pop-ups are blocked. In Safari: tap AA in the address bar -> Website Settings -> Allow Pop-ups.');
